@@ -127,9 +127,9 @@ export default function ContentManager({
       body.append("kelas_id", form.kelas_id);
 
       if (form.jenis === "tugas") {
-        body.append("deadline", form.deadline);
+        body.append("deadline", form.deadline.slice(0, 10));
       }
-
+      
       if (form.gambar) {
         body.append("gambar", form.gambar);
       }
