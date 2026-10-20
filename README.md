@@ -1,36 +1,36 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SIMS Sekolah — Frontend Next.js
 
-## Getting Started
+Frontend untuk backend Express + TypeScript SIMS yang diberikan.
 
-First, run the development server:
+## Menjalankan
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. Ekstrak ZIP.
+2. Buka folder frontend ini di VS Code.
+3. Jalankan `npm install`.
+4. Salin `.env.local.example` menjadi `.env.local`.
+5. Pastikan `NEXT_PUBLIC_API_URL=http://localhost:5000/api` sesuai port backend.
+6. Jalankan backend terlebih dahulu, lalu `npm run dev`.
+7. Buka `http://localhost:3000`.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Fitur yang terhubung dengan API yang tersedia
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Login: `POST /auth/login`
+- Registrasi siswa: `POST /auth/register`
+- Ambil profil login: `GET /profile`
+- Ubah nama/foto profil: `PATCH /profile`
+- Admin mengelola pengguna: `GET /users`, `GET /users/:id`, `POST /users`, `PATCH /users/:id`, `DELETE /users/:id`
+- Baca konten sesuai role: `GET /konten`
+- Guru mengelola konten: `POST /konten`, `PATCH /konten/:id`, `DELETE /konten/:id`
+- Dashboard statistik dihitung dari respons endpoint yang tersedia.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Batasan sesuai backend sekarang
 
-## Learn More
+- Belum ada route daftar kelas (`/api/kelas`) pada `src/app.ts` di ZIP backend, sehingga halaman Kelas yang Diajar memberi keterangan, bukan data palsu. Form konten memakai ID kelas numerik yang sudah ada di database.
+- Belum ada endpoint pengumpulan tugas dan penilaian. Halaman tersebut menjelaskan keterbatasan backend dan tidak mengarang API.
+- API konten hanya mengizinkan guru membuat, mengubah, dan menghapus konten miliknya. Dashboard admin hanya membaca konten.
+- Registrasi publik backend hanya membuat akun siswa. Akun guru/admin dikelola melalui endpoint pengguna admin.
+- File upload menggunakan `foto` untuk profil/pengguna dan `gambar` untuk konten, mengikuti nama field multer pada backend.
 
-To learn more about Next.js, take a look at the following resources:
+## Catatan keamanan
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Frontend menyimpan JWT di `localStorage` untuk kebutuhan aplikasi sekolah sederhana. Untuk produksi, pertimbangkan cookie HttpOnly dan kebijakan keamanan yang sesuai.
