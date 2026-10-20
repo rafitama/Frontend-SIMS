@@ -28,10 +28,7 @@ const blank = {
   gambar: null as File | null,
 };
 
-export default function ContentManager({
-  role,
-  mode = "all",
-}: Props) {
+export default function ContentManager({ role, mode = "all" }: Props) {
   const [items, setItems] = useState<Konten[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -43,6 +40,7 @@ export default function ContentManager({
 
   const [deleteItem, setDeleteItem] = useState<Konten | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [detailItem, setDetailItem] = useState<Konten | null>(null);
 
   const canEdit = role === "guru";
 
@@ -54,9 +52,7 @@ export default function ContentManager({
       const res = await api<{ data: Konten[] }>("/konten");
       setItems(res.data || []);
     } catch (e) {
-      setError(
-        e instanceof Error ? e.message : "Gagal memuat konten",
-      );
+      setError(e instanceof Error ? e.message : "Gagal memuat konten");
     } finally {
       setLoading(false);
     }
@@ -67,18 +63,19 @@ export default function ContentManager({
   }, []);
 
   useEffect(() => {
-    if (!modal && !deleteItem) return;
+    if (!modal && !deleteItem && !detailItem) return;
 
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape" && !busy && !deleting) {
         setModal(false);
         setDeleteItem(null);
+        setDetailItem(null);
       }
     }
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [modal, deleteItem, busy, deleting]);
+  }, [modal, deleteItem, detailItem, busy, deleting]);
 
   const visible = useMemo(
     () =>
@@ -129,7 +126,7 @@ export default function ContentManager({
       if (form.jenis === "tugas") {
         body.append("deadline", form.deadline.slice(0, 10));
       }
-      
+
       if (form.gambar) {
         body.append("gambar", form.gambar);
       }
@@ -144,9 +141,7 @@ export default function ContentManager({
       setModal(false);
       await load();
     } catch (e) {
-      setError(
-        e instanceof Error ? e.message : "Gagal menyimpan konten",
-      );
+      setError(e instanceof Error ? e.message : "Gagal menyimpan konten");
     } finally {
       setBusy(false);
     }
@@ -169,9 +164,7 @@ export default function ContentManager({
 
       setDeleteItem(null);
     } catch (e) {
-      setError(
-        e instanceof Error ? e.message : "Gagal menghapus konten",
-      );
+      setError(e instanceof Error ? e.message : "Gagal menghapus konten");
     } finally {
       setDeleting(false);
     }
@@ -181,9 +174,7 @@ export default function ContentManager({
     <div>
       <div className="toolbar">
         <div>
-          <h2>
-            {mode === "deadline" ? "Deadline Tugas" : "Materi & Tugas"}
-          </h2>
+          <h2>{mode === "deadline" ? "Deadline Tugas" : "Materi & Tugas"}</h2>
           <p className="muted" style={{ fontSize: 13 }}>
             Kelola materi dan tugas dari API SIMS.
           </p>
@@ -225,16 +216,16 @@ export default function ContentManager({
       {loading ? (
         <div className="empty">Memuat konten...</div>
       ) : visible.length === 0 ? (
-        <div className="panel empty">
-          Belum ada data untuk ditampilkan.
-        </div>
+        <div className="panel empty">Belum ada data untuk ditampilkan.</div>
       ) : (
         <div className="content-grid">
           {visible.map((item) => (
-            <article className="content-card" key={item.id}>
-              {item.gambar && (
-                <img src={item.gambar} alt={item.judul} />
-              )}
+            <article
+              className="content-card clickable"
+              key={item.id}
+              onClick={() => setDetailItem(item)}
+            >
+              {item.gambar && <img src={item.gambar} alt={item.judul} />}
 
               <div className="content-body">
                 <div className="content-meta">
@@ -246,18 +237,14 @@ export default function ContentManager({
                     {item.jenis === "materi" ? "Materi" : "Tugas"}
                   </span>
 
-                  <span>
-                    {item.nama_kelas || `Kelas ID ${item.kelas_id}`}
-                  </span>
+                  <span>{item.nama_kelas || `Kelas ID ${item.kelas_id}`}</span>
                 </div>
 
                 <h3>{item.judul}</h3>
                 <p>{item.deskripsi}</p>
 
                 <div className="content-meta">
-                  {item.nama_guru && (
-                    <span>Guru: {item.nama_guru}</span>
-                  )}
+                  {item.nama_guru && <span>Guru: {item.nama_guru}</span>}
 
                   {item.deadline && (
                     <span>
@@ -266,9 +253,9 @@ export default function ContentManager({
                         style={{ verticalAlign: "middle" }}
                       />{" "}
                       Deadline:{" "}
-                      {new Date(
-                        item.deadline.replace(" ", "T"),
-                      ).toLocaleString("id-ID")}
+                      {new Date(item.deadline.replace(" ", "T")).toLocaleString(
+                        "id-ID",
+                      )}
                     </span>
                   )}
                 </div>
@@ -277,7 +264,10 @@ export default function ContentManager({
                   <div className="actions">
                     <button
                       className="btn secondary"
-                      onClick={() => openEdit(item)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openEdit(item);
+                      }}
                     >
                       <Pencil size={14} />
                       Ubah
@@ -285,7 +275,10 @@ export default function ContentManager({
 
                     <button
                       className="btn danger"
-                      onClick={() => setDeleteItem(item)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteItem(item);
+                      }}
                     >
                       <Trash2 size={14} />
                       Hapus
@@ -329,9 +322,7 @@ export default function ContentManager({
                   required
                   minLength={3}
                   value={form.judul}
-                  onChange={(e) =>
-                    setForm({ ...form, judul: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, judul: e.target.value })}
                 />
               </div>
 
@@ -355,9 +346,7 @@ export default function ContentManager({
                       ...form,
                       jenis: e.target.value as "materi" | "tugas",
                       deadline:
-                        e.target.value === "materi"
-                          ? ""
-                          : form.deadline,
+                        e.target.value === "materi" ? "" : form.deadline,
                     })
                   }
                 >
@@ -431,6 +420,66 @@ export default function ContentManager({
         </div>
       )}
 
+      {/* Popup detail materi / tugas */}
+      {detailItem && (
+        <div
+          className="detail-overlay"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setDetailItem(null);
+          }}
+        >
+          <section className="detail-modal" role="dialog" aria-modal="true">
+            <button
+              type="button"
+              className="detail-close"
+              onClick={() => setDetailItem(null)}
+              aria-label="Tutup"
+            >
+              <X size={19} />
+            </button>
+
+            {detailItem.gambar && (
+              <img
+                className="detail-image"
+                src={detailItem.gambar}
+                alt={detailItem.judul}
+              />
+            )}
+
+            <div className="content-meta">
+              <span
+                className={`badge ${
+                  detailItem.jenis === "materi" ? "green" : "orange"
+                }`}
+              >
+                {detailItem.jenis === "materi" ? "Materi" : "Tugas"}
+              </span>
+              <span>
+                {detailItem.nama_kelas || `Kelas ID ${detailItem.kelas_id}`}
+              </span>
+            </div>
+
+            <h2>{detailItem.judul}</h2>
+
+            {detailItem.nama_guru && (
+              <p className="detail-guru">Guru: {detailItem.nama_guru}</p>
+            )}
+
+            {detailItem.deadline && (
+              <p className="detail-deadline">
+                <CalendarClock size={15} style={{ verticalAlign: "middle" }} />{" "}
+                Deadline:{" "}
+                {new Date(
+                  detailItem.deadline.replace(" ", "T"),
+                ).toLocaleDateString("id-ID", { dateStyle: "full" })}
+              </p>
+            )}
+
+            <div className="detail-desc">{detailItem.deskripsi}</div>
+          </section>
+        </div>
+      )}
+
       {/* Popup konfirmasi hapus tepat di tengah layar */}
       {deleteItem && (
         <div
@@ -465,9 +514,9 @@ export default function ContentManager({
             <h2 id="delete-title">Hapus konten?</h2>
 
             <p id="delete-description">
-              Kamu yakin ingin menghapus{" "}
-              <strong>{deleteItem.judul}</strong>? Konten yang sudah
-              dihapus tidak bisa ditampilkan kembali dari halaman ini.
+              Kamu yakin ingin menghapus <strong>{deleteItem.judul}</strong>?
+              Konten yang sudah dihapus tidak bisa ditampilkan kembali dari
+              halaman ini.
             </p>
 
             <div className="delete-item-info">
@@ -510,6 +559,96 @@ export default function ContentManager({
       )}
 
       <style jsx>{`
+        .clickable {
+          cursor: pointer;
+          transition:
+            transform 0.15s ease,
+            box-shadow 0.15s ease;
+        }
+
+        .clickable:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 10px 25px rgba(108, 99, 255, 0.15);
+        }
+
+        .detail-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 99998;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+          overflow-y: auto;
+          background: rgba(15, 23, 42, 0.42);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+        }
+
+        .detail-modal {
+          position: relative;
+          width: 100%;
+          max-width: 640px;
+          max-height: 90vh;
+          overflow-y: auto;
+          margin: auto;
+          padding: 28px;
+          border-radius: 24px;
+          background: #fff;
+          box-shadow: 0 25px 80px rgba(15, 23, 42, 0.24);
+        }
+
+        .detail-close {
+          position: absolute;
+          top: 14px;
+          right: 14px;
+          z-index: 1;
+          display: grid;
+          place-items: center;
+          width: 34px;
+          height: 34px;
+          padding: 0;
+          border: 0;
+          border-radius: 10px;
+          background: #f3f4f6;
+          color: #64748b;
+          cursor: pointer;
+        }
+
+        .detail-close:hover {
+          background: #e5e7eb;
+        }
+
+        .detail-image {
+          width: 100%;
+          max-height: 320px;
+          object-fit: cover;
+          border-radius: 16px;
+          margin-bottom: 16px;
+        }
+
+        .detail-modal h2 {
+          margin: 12px 0 6px;
+          color: #1e293b;
+          overflow-wrap: anywhere;
+        }
+
+        .detail-guru,
+        .detail-deadline {
+          margin: 0 0 6px;
+          color: #64748b;
+          font-size: 13px;
+        }
+
+        .detail-desc {
+          margin-top: 16px;
+          color: #334155;
+          font-size: 14px;
+          line-height: 1.8;
+          white-space: pre-wrap;
+          overflow-wrap: anywhere;
+        }
+
         .modal-heading {
           display: flex;
           align-items: center;
@@ -712,6 +851,11 @@ export default function ContentManager({
 
           .delete-actions {
             gap: 8px;
+          }
+
+          .detail-modal {
+            padding: 22px 18px;
+            border-radius: 20px;
           }
         }
 
